@@ -6,4 +6,4 @@ Functioality Need To Achieve
 - RFID Read and Emit
 - NFC Read and Write
 
-Provide your idealogy to achieve the mentioned functionality   "format this readme.md  file
+Provide your idealogy to achieve the mentioned functionality   
