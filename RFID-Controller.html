@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arduino RFID Reader/Writer</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    #output, #writeData { width: 100%; height: 100px; margin-top: 10px; }
+    button { margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<h2>Arduino RFID Reader and Writer</h2>
+
+<!-- Read Section -->
+<button id="connectBtn">Connect to Arduino</button>
+<button id="readBtn" disabled>Read Card</button>
+<textarea id="output" placeholder="Card Data will appear here..." readonly></textarea>
+
+<!-- Write Section -->
+<textarea id="writeData" placeholder="Enter data to write to card (max 16 chars)"></textarea>
+<button id="writeBtn" disabled>Write Card</button>
+
+<script>
+  let port;
+  let writer;
+  let reader;
+
+  async function connectToSerial() {
+    try {
+      // Request a port and open a connection
+      port = await navigator.serial.requestPort();
+      await port.open({ baudRate: 9600 });
+
+      // Set up text encoder/decoder for writing and reading
+      writer = port.writable.getWriter();
+      reader = port.readable.getReader();
+
+      document.getElementById("readBtn").disabled = false;
+      document.getElementById("writeBtn").disabled = false;
+      document.getElementById("connectBtn").innerText = "Connected";
+      document.getElementById("connectBtn").disabled = true;
+
+      // Read incoming data
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        document.getElementById("output").value += new TextDecoder().decode(value);
+      }
+    } catch (err) {
+      console.error("Error connecting to serial port:", err);
+      alert("Failed to connect to the device.");
+    }
+  }
+
+  async function sendSerialCommand(command) {
+    if (writer) {
+      const encoded = new TextEncoder().encode(command + "\n");
+      await writer.write(encoded);
+    }
+  }
+
+  // Read Card
+  document.getElementById("readBtn").onclick = async () => {
+    document.getElementById("output").value = ""; // Clear output
+    await sendSerialCommand("READ");
+  };
+
+  // Write Card
+  document.getElementById("writeBtn").onclick = async () => {
+    const writeData = document.getElementById("writeData").value;
+    if (writeData.length > 16) {
+      alert("Data too long! Please limit to 16 characters.");
+      return;
+    }
+    await sendSerialCommand("WRITE:" + writeData);
+  };
+
+  // Connect button
+  document.getElementById("connectBtn").onclick = connectToSerial;
+</script>
+
+</body>
+</html>
